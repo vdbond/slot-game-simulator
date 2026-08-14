@@ -1,17 +1,55 @@
 package com.vdbond;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
-    static void main() {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        IO.println(String.format("Hello and welcome!"));
+import com.vdbond.config.GameConfigLoader;
+import com.vdbond.domain.GameConfig;
+import com.vdbond.report.ReportFormatter;
+import com.vdbond.simulation.SimulationRunner;
+import com.vdbond.stats.SimulationStatistics;
+import com.vdbond.stats.StatisticsAccumulator;
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            IO.println("i = " + i);
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+
+public class Main {
+
+    private static final Path REPORT_PATH = Path.of("report.txt");
+
+    static void main(String[] args) {
+        try {
+            run(args);
+        } catch (IllegalArgumentException | UncheckedIOException e) {
+            System.err.println("Error: " + e.getMessage());
+            System.exit(1);
         }
     }
+
+    private static void run(String[] args) {
+        CliOptions options = CliOptions.parse(args);
+        GameConfig config = GameConfigLoader.loadFromClasspath(options.configResource());
+
+        Instant start = Instant.now();
+        StatisticsAccumulator accumulator = new SimulationRunner(config, new SecureRandom())
+                .run(options.rounds());
+        Duration elapsed = Duration.between(start, Instant.now());
+
+        SimulationStatistics stats = accumulator.summarize(config.bet());
+        String report = ReportFormatter.format(stats, elapsed);
+
+        System.out.println(report);
+        writeReport(report);
+    }
+
+    private static void writeReport(String report) {
+        try {
+            Files.writeString(REPORT_PATH, report);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to write report to " + REPORT_PATH, e);
+        }
+    }
+
 }
