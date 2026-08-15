@@ -1,0 +1,7 @@
+=== Slot Machine Simulation Report ===
+Rounds:              50,000,000
+Total Wagered:       500,000,000.00 credits
+Total Returned:      467,323,580.00 credits
+RTP:                 93.4647%
+Standard Deviation:  48.7403 credits (4.8740x bet)
+Execution Time:      14.93s
